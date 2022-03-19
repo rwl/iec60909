@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 gridjson = {path = "../gridjson"}
 num-complex = "0.4"
+approx = "0.5"

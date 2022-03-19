@@ -4,7 +4,6 @@ use crate::busbar::{voltage_correction_factor, BusbarIndex};
 use crate::traits::Sq;
 use gridjson::*;
 use num_complex::{Complex, Complex64};
-use std::collections::HashMap;
 use std::f64::consts::PI;
 
 const SQRT_3: f64 = 1.732050807568877293527446341505872366942805253810380628055;
@@ -14,7 +13,7 @@ pub fn feeder_impedance(
     ohl: bool,
     busbar_index: &BusbarIndex,
 ) -> Result<Complex64, String> {
-    let busbar = busbar_index.busbar(&feeder.node).unwrap();
+    let busbar = busbar_index.busbar(feeder.node.as_ref().unwrap()).unwrap();
 
     let c = busbar.cmax.unwrap_or_default();
     let un = busbar.un.unwrap();
@@ -60,13 +59,14 @@ pub fn transformer_impedance(
     let (u_r, u_n, c) = if hv {
         let ur = tr.ur_hv.unwrap() * 1000.0;
 
-        let (mut un, mut c) = if let Some(busbar) = busbar_index.busbar(&tr.node_hv) {
-            let un = busbar.un.unwrap() * 1000.0;
-            let c = busbar.cmax.unwrap();
-            (un, c)
-        } else {
-            (0.0, 0.0)
-        };
+        let (mut un, mut c) =
+            if let Some(busbar) = busbar_index.busbar(tr.node_hv.as_ref().unwrap()) {
+                let un = busbar.un.unwrap() * 1000.0;
+                let c = busbar.cmax.unwrap();
+                (un, c)
+            } else {
+                (0.0, 0.0)
+            };
         if un == 0.0 {
             un = ur;
         }
@@ -78,14 +78,15 @@ pub fn transformer_impedance(
     } else {
         let ur = tr.ur_lv.unwrap() * 1000.0;
 
-        let (mut un, mut c) = if let Some(busbar) = busbar_index.busbar(&tr.node_lv) {
-            // if busbar, ok := busbarIndex[tr.NodeLv]; ok {
-            let un = busbar.un.unwrap() * 1000.0;
-            let c = busbar.cmax.unwrap();
-            (un, c)
-        } else {
-            (0.0, 0.0)
-        };
+        let (mut un, mut c) =
+            if let Some(busbar) = busbar_index.busbar(tr.node_lv.as_ref().unwrap()) {
+                // if busbar, ok := busbarIndex[tr.NodeLv]; ok {
+                let un = busbar.un.unwrap() * 1000.0;
+                let c = busbar.cmax.unwrap();
+                (un, c)
+            } else {
+                (0.0, 0.0)
+            };
         if un == 0.0 {
             un = ur;
         }
@@ -140,10 +141,10 @@ pub fn power_station_impedance(
     peak: bool,
     busbar_index: &BusbarIndex,
 ) -> Result<Complex64, String> {
-    let t = &psu.transformer;
-    let g = &psu.generator;
+    let t = psu.transformer.as_ref().unwrap();
+    let g = psu.generator.as_ref().unwrap();
 
-    let busbar = busbar_index.busbar(&t.node_hv).unwrap();
+    let busbar = busbar_index.busbar(t.node_hv.as_ref().unwrap()).unwrap();
 
     let mut un = busbar.un.unwrap() * 1e3;
     let mut c = busbar.cmax.unwrap();
@@ -358,7 +359,7 @@ pub fn generator_impedance(
     peak: bool,
     busbar_index: &BusbarIndex,
 ) -> Result<Complex64, String> {
-    let busbar = busbar_index.busbar(&sym.node).unwrap();
+    let busbar = busbar_index.busbar(sym.node.as_ref().unwrap()).unwrap();
 
     let mut un = busbar.un.unwrap() * 1e3; // Nominal voltage of the system.
     let mut c = busbar.cmax.unwrap(); // Voltage correction factor.
@@ -401,6 +402,7 @@ pub fn generator_impedance(
     Ok(zg_k)
 }
 
+#[derive(Clone, Copy)]
 pub enum TransformerSide {
     HV,
     MV,
@@ -413,7 +415,7 @@ pub enum TransformerSides {
     MvLv,
 }
 
-pub fn three_winding_transformer_impedance(
+pub fn three_winding_transformer_side_impedance(
     tr: &ThreeWindingTransformer,
     side: TransformerSide,
     sides: TransformerSides,
@@ -468,4 +470,25 @@ pub fn three_winding_transformer_impedance(
     let zk = Complex64::new(k, 0.0) * z;
 
     Ok(zk)
+}
+
+pub fn three_winding_transformer_impedance(
+    tr: &ThreeWindingTransformer,
+    side: TransformerSide,
+    busbar_index: &BusbarIndex,
+) -> Result<(Complex64, Complex64, Complex64), String> {
+    let zk_hv_mv =
+        three_winding_transformer_side_impedance(tr, side, TransformerSides::HvMv, busbar_index)?;
+
+    let zk_hv_lv =
+        three_winding_transformer_side_impedance(tr, side, TransformerSides::HvLv, busbar_index)?;
+
+    let zk_mv_lv =
+        three_winding_transformer_side_impedance(tr, side, TransformerSides::MvLv, busbar_index)?;
+
+    let z_hv = 0.5 * (zk_hv_mv + zk_hv_lv - zk_mv_lv);
+    let z_mv = 0.5 * (zk_mv_lv + zk_hv_mv - zk_hv_lv);
+    let z_lv = 0.5 * (zk_hv_lv + zk_mv_lv - zk_hv_mv);
+
+    Ok((z_hv, z_mv, z_lv))
 }

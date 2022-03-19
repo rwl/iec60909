@@ -25,6 +25,12 @@ impl<'a> BusbarIndex<'a> {
         ix
     }
 
+    pub(crate) fn empty() -> Self {
+        BusbarIndex {
+            index: HashMap::new(),
+        }
+    }
+
     pub(crate) fn busbar(&self, node: &str) -> Option<&'a Busbar> {
         // Some(self.busbars[*self.index.get(node).unwrap()])
         Some(*self.index.get(node).unwrap())
@@ -73,15 +79,17 @@ pub(crate) fn voltage_correction_factor(un: f64, min: bool, six_percent: bool) -
 macro_rules! busbar {
     ($un:expr, $( $args:expr ),*) => {
         {
+            let un = f64::from($un);
             let mut nodes: Vec<String> = vec![];
             $(
-                nodes.push($args);
+                nodes.push(String::from($args));
             )*
             Busbar{
-                un: $un,
-                nodes: nodes,
-                cmax: crate::busbar::voltage_correction_factor($un, false, true),
-		        cmin: crate::busbar::voltage_correction_factor($un, true, true)
+                un: Some(un),
+                node: None,
+                nodes: Some(nodes),
+                cmax: Some(crate::busbar::voltage_correction_factor(un, false, true)),
+		        cmin: Some(crate::busbar::voltage_correction_factor(un, true, true))
             }
         }
     }
