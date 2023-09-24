@@ -1,39 +1,64 @@
-use gridjson::Busbar;
+use derive_builder::Builder;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-pub struct BusbarIndex<'a> {
-    index: HashMap<String, &'a Busbar>,
+#[derive(Clone, PartialEq, Debug, Default, Deserialize, Serialize, Builder)]
+#[builder(default, setter(into))]
+pub struct Busbar<N: Clone + Default> {
+    #[builder(setter(each(name = "node")))]
+    pub nodes: Vec<N>,
+
+    /// Nominal system voltage of the busbar (kV).
+    pub un: f64,
+
+    /// Voltage correction factor for maximum short-circuit current. Typical value is 1.1 or 1.05
+    /// for nominal voltages below 1kV.
+    #[builder(setter(strip_option))]
+    pub cmax: Option<f64>,
+
+    /// Voltage correction factor for minimum short-circuit current. Typical value is 1 or 0.95 for
+    /// nominal voltages below 1kV.
+    #[builder(setter(strip_option))]
+    pub cmin: Option<f64>,
+}
+
+impl<N: Clone + Default> Busbar<N> {
+    pub fn new() -> BusbarBuilder<N> {
+        BusbarBuilder::default()
+    }
+}
+
+pub struct BusbarIndex<'a, N: Clone + Default + Eq + core::hash::Hash> {
+    index: HashMap<N, &'a Busbar<N>>,
     // index: HashMap<String, usize>,
     // busbars: Vec<&'a Busbar>,
 }
 
-impl<'a> BusbarIndex<'a> {
-    pub(crate) fn new(busbars: &'a [Busbar]) -> Self {
+impl<'a, N: Clone + Default + Eq + core::hash::Hash> BusbarIndex<'a, N> {
+    pub fn new(busbars: &'a [Busbar<N>]) -> Self {
         let mut ix = BusbarIndex {
             index: HashMap::new(),
             // busbars: vec![],
         };
         for busbar in busbars {
-            if busbar.node.as_ref().unwrap() != "" {
-                ix.index
-                    .insert(busbar.node.as_ref().unwrap().to_string(), busbar);
-            }
-            for node in busbar.nodes.as_ref().unwrap() {
-                ix.index.insert(node.to_string(), busbar);
+            for node in &busbar.nodes {
+                ix.index.insert(node.clone(), busbar);
             }
         }
         ix
     }
 
-    pub(crate) fn empty() -> Self {
+    pub fn empty() -> Self {
         BusbarIndex {
             index: HashMap::new(),
         }
     }
 
-    pub(crate) fn busbar(&self, node: &str) -> Option<&'a Busbar> {
-        // Some(self.busbars[*self.index.get(node).unwrap()])
-        Some(*self.index.get(node).unwrap())
+    pub fn busbar(&self, node: &N) -> Option<&'a Busbar<N>> {
+        match self.index.get(node) {
+            Some(b) => Some(b),
+            None => None,
+        }
     }
 }
 
@@ -75,21 +100,28 @@ pub(crate) fn voltage_correction_factor(un: f64, min: bool, six_percent: bool) -
     }
 }
 
+pub(crate) fn c_or_default<N: Clone + Default>(busbar: &Busbar<N>) -> f64 {
+    match busbar.cmax {
+        Some(cmax) => cmax,
+        None => voltage_correction_factor(busbar.un, false, true),
+    }
+}
+
 #[macro_export]
 macro_rules! busbar {
     ($un:expr, $( $args:expr ),*) => {
         {
             let un = f64::from($un);
-            let mut nodes: Vec<String> = vec![];
+            let mut nodes = vec![];
             $(
-                nodes.push(String::from($args));
+                nodes.push($args);
             )*
-            Busbar{
-                un: Some(un),
-                node: None,
-                nodes: Some(nodes),
-                cmax: Some(crate::busbar::voltage_correction_factor(un, false, true)),
-		        cmin: Some(crate::busbar::voltage_correction_factor(un, true, true))
+            crate::busbar::Busbar{
+                un,
+                // node: None,
+                nodes,
+                cmax: None,
+                cmin: None,
             }
         }
     }

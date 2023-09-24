@@ -1,11 +1,13 @@
 [package]
-name = "gridsc"
+name = "iec60909"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-gridjson = {path = "../gridjson"}
+serde = { version = "1.0", features = ["derive"] }
+derive_builder = "0.12"
+anyhow = "1"
 num-complex = "0.4"
 approx = "0.5"
+sparsetools = "0.2"
+spsolve = { version = "0.1", features = ["rlu"] }

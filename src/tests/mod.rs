@@ -4,6 +4,8 @@ mod iec60909_4_4;
 mod iec60909_4_5;
 mod iec60909_4_6;
 
+mod impedance_test;
+
 #[macro_export]
 macro_rules! assert_cmplx_eq {
     ($given:expr, $expected:expr $(, $opt:ident = $val:expr)*) => {
