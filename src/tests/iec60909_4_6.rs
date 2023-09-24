@@ -14,14 +14,13 @@ fn iec60909_4_6_feeder() -> Result<()> {
     let mut net = iec60909_4_6()?;
 
     let q1 = &mut net.feeders[0];
-    let tr = q1.tr.unwrap();
-    q1.tr = Some(0.0);
+    let tr = q1.tr.take();
     let busbar_index = BusbarIndex::new(&net.busbars);
 
     let z = q1.impedance(false, &busbar_index)?;
     assert_cmplx_eq!(z, z_q1, epsilon = 1e-6);
 
-    q1.tr = Some(tr);
+    q1.tr = tr;
 
     let z = q1.impedance(false, &busbar_index)?;
     assert_cmplx_eq!(z, z_q1t, epsilon = 1e-6);

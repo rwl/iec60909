@@ -87,8 +87,6 @@ impl<N: Clone + Default + Eq + core::hash::Hash> ACSystem<N> {
         let (ix, nn) = self.nodes();
         let y_mat: CSC<usize, Complex64> = self.admittance_matrix(&ix, nn)?;
 
-        // let Z = zmat.Identity(nn);
-
         let factors =
             solver.factor(y_mat.cols(), y_mat.rowidx(), y_mat.colptr(), y_mat.values())?;
 
@@ -98,7 +96,7 @@ impl<N: Clone + Default + Eq + core::hash::Hash> ACSystem<N> {
             z[i] = ONE;
             solver.solve(&factors, &mut z, false)?;
             z_diag[i] = z[i];
-            z[i] = Complex64::default();
+            z.fill(Complex64::default());
         }
 
         let mut zk = HashMap::new();

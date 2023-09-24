@@ -162,7 +162,7 @@ impl<N: Clone + Default + Eq + core::hash::Hash> ThreeWindingTransformer<N> {
         let mut cmax = voltage_correction_factor(self.ur_hv, false, true);
         // if let Some(node_hv) = self.node_hv.as_ref() {
         if let Some(busbar) = busbar_index.busbar(&self.node_hv) {
-            if busbar.cmax.unwrap() != 0.0 {
+            if busbar.cmax.unwrap_or_default() != 0.0 {
                 cmax = busbar.cmax.unwrap();
             }
         }

@@ -75,7 +75,13 @@ fn iec60909_4_5_transformers2_5() -> Result<()> {
     let net = iec60909_4_5()?;
     let busbar_index = BusbarIndex::new(&net.busbars);
 
-    for i in 0..=10 {
+    for i in 0..5 {
+        let tr = &net.transformers[i];
+
+        let z = tr.impedance(true, &busbar_index)?;
+        assert_cmplx_eq!(z, z_hv, epsilon = 1e-3);
+    }
+    for i in 6..11 {
         let tr = &net.transformers[i];
 
         let z = tr.impedance(true, &busbar_index)?;
@@ -105,17 +111,18 @@ fn iec60909_4_5_transformers1_6() -> Result<()> {
     Ok(())
 }
 
-// #[test]
-// fn iec60909_4_5_motor_b() -> Result<(), String> {
-//     let xm1 = 0.995 * 1.60;
-//     let rm1 = 0.1 * xm1;
-//
-//     let net = iec60909_4_5();
-//
-//     let m1 = net.motors.as_ref().unwrap().get(0).unwrap();
-//     let z1 = motor_impedance(m1)?;
-//
-//     assert_cmplx_eq!(z1, cmplx!(rm1, xm1), epsilon = 1e-5);
-//
-//     Ok(())
-// }
+#[ignore]
+#[test]
+fn iec60909_4_5_motor_b() -> Result<()> {
+    let xm1 = 0.995 * 1.60;
+    let rm1 = 0.1 * xm1;
+
+    let net = iec60909_4_5()?;
+
+    let m1 = &net.motors[0];
+    let z1 = m1.impedance()?;
+
+    assert_cmplx_eq!(z1, cmplx!(rm1, xm1), epsilon = 1e-5);
+
+    Ok(())
+}
