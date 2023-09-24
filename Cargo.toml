@@ -1,6 +1,9 @@
 [package]
 name = "iec60909"
 version = "0.1.0"
+description = "Short-circuit currents in three-phase a.c. systems"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/rwl/iec60909"
 edition = "2021"
 
 [dependencies]
