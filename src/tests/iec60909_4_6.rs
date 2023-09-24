@@ -1,7 +1,7 @@
 use anyhow::Result;
 
 use crate::busbar::BusbarIndex;
-use crate::part4::section6::iec60909_4_6;
+use crate::part4::iec60909_4_6;
 use crate::transformer3::TransformerSide;
 use crate::{assert_cmplx_eq, cmplx};
 

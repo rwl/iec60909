@@ -2,17 +2,7 @@ extern crate self as iec60909;
 
 use anyhow::Result;
 
-use iec60909::ac_system::ACSystem;
-use iec60909::busbar;
-use iec60909::cable::Cable;
-use iec60909::feeder::NetworkFeeder;
-use iec60909::generator::SynchronousGenerator;
-use iec60909::line::OverheadLine;
-use iec60909::motor::AsynchronousMotor;
-use iec60909::reactor::Reactor;
-use iec60909::station::PowerStationUnit;
-use iec60909::transformer::NetworkTransformer;
-use iec60909::transformer3::ThreeWindingTransformer;
+use iec60909::*;
 
 // IEC60909_4_6 returns the a.c. system from Section 6 of IEC60909-4.
 pub fn iec60909_4_6() -> Result<ACSystem<&'static str>> {

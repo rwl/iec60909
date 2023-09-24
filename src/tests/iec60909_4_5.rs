@@ -1,5 +1,5 @@
 use crate::busbar::BusbarIndex;
-use crate::part4::section5::iec60909_4_5;
+use crate::part4::iec60909_4_5;
 use crate::transformer3::TransformerSide;
 use crate::{assert_cmplx_eq, cmplx};
 use anyhow::Result;

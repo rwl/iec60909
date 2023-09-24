@@ -1,7 +1,7 @@
 use anyhow::Result;
 use num_complex::Complex64;
 
-use crate::{assert_cmplx_eq, part4::section3::iec60909_4_3};
+use crate::{assert_cmplx_eq, part4::iec60909_4_3};
 
 #[test]
 fn test_fault_impedance() -> Result<()> {
